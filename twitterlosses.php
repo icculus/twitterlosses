@@ -10,6 +10,9 @@ function cache_users(&$userobjs, $cachedir, $idsstr)
 
     //print("Getting $idsstr ...\n");
 
+    $now = DateTime::createFromFormat("U", "" . time());
+    $nowstr = $now->format("D M d H:i:s O Y");
+
     $data = $connection->get('users/lookup', array('user_id' => $idsstr, 'include_entities' => 'true'));
     if ($data === false)
     {
@@ -28,11 +31,13 @@ function cache_users(&$userobjs, $cachedir, $idsstr)
     //print_r($data);
     foreach ($data as $obj)
     {
-        unset($data->status);  // don't care about this.
         $fname = $obj->id_str;
         $username = $obj->screen_name;
         $cachefname = "$cachedir/$fname";
         $obj->account_was_deleted = false;
+        $obj->lookup_time = $nowstr;
+        if (isset($obj->status) && isset($obj->status->created_at))
+            $obj->last_tweeted = $obj->status->created_at;
         if (file_put_contents($cachefname, serialize($obj)) === false)
         {
             print("couldn't write $cachefname (user $username)!\n");
@@ -44,6 +49,26 @@ function cache_users(&$userobjs, $cachedir, $idsstr)
         $userobjs[] = $obj;
     }
 } // cache_users
+
+function print_time_stamp($prefix, $t)
+{
+    print("$prefix");
+    if (!isset($t))
+    {
+        print("???\n");
+        return;
+    }
+
+    print("$t (");
+    $date1 = new DateTime($t);
+    $date2 = DateTime::createFromFormat("U", "" . time());
+    $interval = $date1->diff($date2);
+    if ($interval->y > 0)
+        print("{$interval->y} years, ");
+    if ($interval->m > 0)
+        print("{$interval->m} months, ");
+    print("{$interval->d} days)\n");
+} // print_time_stamp
 
 function print_user_object($obj)
 {
@@ -67,6 +92,8 @@ function print_user_object($obj)
     print("are following: " . (($obj->following == '1') ? 'yes' : 'no') . "\n");
     print("protected: " . (($obj->protected == '1') ? 'yes' : 'no') . "\n");
     print("verified: " . (($obj->verified == '1') ? 'yes' : 'no') . "\n");
+    print_time_stamp("last tweeted: ", isset($obj->last_tweeted) ? $obj->last_tweeted : NULL);
+    print_time_stamp("looked up: ", isset($obj->lookup_time) ? $obj->lookup_time : NULL);
     print("\n");
 } // print_user_object
 
