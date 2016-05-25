@@ -67,7 +67,6 @@ ksort($dead_duration, SORT_NUMERIC);
 
 print("total followers: $total_statuses\n");
 print("followers with no tweets ever or locked account: $unknown_statuses\n");
-print("$unknown_statuses unknown-status followers (no tweets ever or private)\n");
 foreach($dead_duration as $k => $v)
     print("Followers inactive >$k months: $v\n");
 
