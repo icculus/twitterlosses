@@ -22,6 +22,12 @@ function cache_users(&$userobjs, $cachedir, $idsstr)
     }
     else if (isset($data->errors))
     {
+        foreach ($data->errors as $err)
+        {
+            if ($err->code == 17)
+                return;  // this means "user doesn't exist" which happens if someone following you gets suspended. Ignore it.
+        }
+
         print("get users failed:\n");
         foreach ($data->errors as $err)
             print("  - {$err->message}\n");
